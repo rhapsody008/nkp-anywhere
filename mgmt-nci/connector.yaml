@@ -1,0 +1,36 @@
+# Run After bindsecret.yaml
+apiVersion: dex.mesosphere.io/v1alpha1
+kind: Connector
+metadata:
+  name: ldap-identity-provider
+  namespace: kommander
+spec:
+  displayName: ntnxlab-ldap
+  enabled: true
+  ldap:
+    bindDN: CN=zhouyi,CN=Users,DC=ntnxlab,DC=local
+    bindSecretRef:
+      name: connector-ldap-bindsecret-zhouyi
+    groupSearch:
+      baseDN: CN=Users,DC=ntnxlab,DC=local
+      filter: (objectClass=group)
+      nameAttr: cn
+      scope: ""
+      userMatchers:
+      - groupAttr: member
+        userAttr: DN
+    host: 10.129.42.99:389
+    insecureNoSSL: true
+    insecureSkipVerify: true
+    startTLS: false
+    userSearch:
+      baseDN: CN=Users,DC=ntnxlab,DC=local
+      emailAttr: userPrincipalName
+      emailSuffix: ""
+      filter: ""
+      idAttr: DN
+      nameAttr: name
+      scope: sub
+      username: sAMAccountName
+  type: ldap
+# Run group.yaml

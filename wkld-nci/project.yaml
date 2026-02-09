@@ -1,0 +1,16 @@
+---
+apiVersion: workspaces.kommander.mesosphere.io/v1alpha1
+kind: Project
+metadata:
+  annotations:
+    kommander.mesosphere.io/description: "Project space for CKS resources"
+    kommander.mesosphere.io/display-name: "CKS Project"
+  name: cks
+  namespace: zy
+spec:
+  namespaceName: cks
+  placement:
+    clusters:
+    - name: zy-nkp-wkld
+  workspaceRef:
+    name: zy

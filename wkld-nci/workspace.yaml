@@ -1,0 +1,9 @@
+apiVersion: workspaces.kommander.mesosphere.io/v1alpha1
+kind: Workspace
+metadata:
+  annotations:
+    kommander.mesosphere.io/display-name: "ZY"
+    workspace.kommander.mesosphere.io/default-app-deployments-created: "true"
+  name: zy
+spec:
+  namespaceName: zy

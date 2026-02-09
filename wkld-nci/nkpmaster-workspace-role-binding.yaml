@@ -1,0 +1,38 @@
+apiVersion: workspaces.kommander.mesosphere.io/v1alpha1
+kind: VirtualGroupWorkspaceRoleBinding
+metadata:
+  name: workspacepolicy-nkp-master-1
+  namespace: zy
+spec:
+  placement:
+    clusterSelector: {}
+  virtualGroupRef:
+    name: nkp-master-group
+  workspaceRoleRef:
+    name: workspace-cluster-admin
+
+---
+apiVersion: workspaces.kommander.mesosphere.io/v1alpha1
+kind: VirtualGroupWorkspaceRoleBinding
+metadata:
+  name: workspacepolicy-nkp-master-2
+  namespace: zy
+spec:
+  placement:
+    clusterSelector: {}
+  virtualGroupRef:
+    name: nkp-master-group
+  workspaceRoleRef:
+    name: workspace-admin
+
+---
+apiVersion: workspaces.kommander.mesosphere.io/v1alpha1
+kind: VirtualGroupKommanderWorkspaceRoleBinding
+metadata:
+  name: workspacepolicy-nkp-master-1
+  namespace: zy
+spec:
+  kommanderWorkspaceRoleRef:
+    name: kommander-workspace-admin
+  virtualGroupRef:
+    name: nkp-master-group

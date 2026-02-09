@@ -1,0 +1,163 @@
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  annotations:
+    caren.nutanix.com/cluster-uuid: 019c274f-a639-7744-87d3-08a0ac780826
+  labels:
+    cluster.x-k8s.io/provider: nutanix
+    konvoy.d2iq.io/cluster-name: zy-nkp-wkld
+    konvoy.d2iq.io/provider: nutanix
+  name: zy-nkp-wkld
+  namespace: zy
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+      - 192.168.0.0/16
+    services:
+      cidrBlocks:
+      - 10.96.0.0/12
+  controlPlaneEndpoint:
+    host: ""
+    port: 0
+  topology:
+    class: nkp-nutanix-v2.16.1
+    controlPlane:
+      metadata: {}
+      replicas: 1
+    variables:
+    - name: clusterConfig
+      value:
+        addons:
+          ccm:
+            credentials:
+              secretRef:
+                name: zy-nkp-wkld-pc-credentials
+            strategy: HelmAddon
+          clusterAutoscaler:
+            strategy: HelmAddon
+          cni:
+            provider: Cilium
+            strategy: HelmAddon
+          cosi:
+            strategy: HelmAddon
+          csi:
+            defaultStorage:
+              provider: nutanix
+              storageClassConfig: volume
+            providers:
+              nutanix:
+                credentials:
+                  secretRef:
+                    name: zy-nkp-wkld-pc-credentials-for-csi
+                storageClassConfigs:
+                  volume:
+                    allowExpansion: true
+                    parameters:
+                      csi.storage.k8s.io/fstype: ext4
+                      description: CSI StorageClass nutanix-volume for zy-nkp-wkld
+                      flashMode: DISABLED
+                      hypervisorAttached: ENABLED
+                      storageContainer: SelfServiceContainer
+                      storageType: NutanixVolumes
+                    reclaimPolicy: Delete
+                    volumeBindingMode: WaitForFirstConsumer
+                strategy: HelmAddon
+            snapshotController:
+              strategy: HelmAddon
+          nfd:
+            strategy: HelmAddon
+          serviceLoadBalancer:
+            configuration:
+              addressRanges:
+              - end: 10.129.42.215
+                start: 10.129.42.211
+            provider: MetalLB
+        controlPlane:
+          autoRenewCertificates:
+            daysBeforeExpiry: 180
+          nodeRegistration:
+            ignorePreflightErrors:
+            - SystemVerification
+          nutanix:
+            machineDetails:
+              additionalCategories:
+              - key: Owner
+                value: zy
+              bootType: uefi
+              cluster:
+                name: NKP
+                type: name
+              image:
+                name: nkp-ubuntu-22.04-release-cis-1.33.5-20251108010758.qcow2
+                type: name
+              memorySize: 32Gi
+              subnets:
+              - name: Machine_Network_42
+                type: name
+              systemDiskSize: 80Gi
+              vcpuSockets: 8
+              vcpusPerSocket: 1
+        dns:
+          coreDNS: {}
+        encryptionAtRest:
+          providers:
+          - secretbox: {}
+        globalImageRegistryMirror:
+          credentials:
+            secretRef:
+              name: zy-nkp-wkld-image-registry-mirror-credentials
+          url: https://zy-registry.ntnxlab.local/library
+        imageRegistries:
+        - credentials:
+            secretRef:
+              name: zy-nkp-wkld-image-registry-credentials
+          url: https://zy-registry.ntnxlab.local
+        nutanix:
+          controlPlaneEndpoint:
+            host: 10.129.42.210
+            port: 6443
+            virtualIP:
+              provider: KubeVIP
+          prismCentralEndpoint:
+            credentials:
+              secretRef:
+                name: zy-nkp-wkld-pc-credentials
+            insecure: true
+            url: https://10.129.42.11:9440/
+    version: v1.33.5
+    workers:
+      machineDeployments:
+      - class: default-worker
+        metadata:
+          annotations:
+            cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size: "2"
+            cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size: "2"
+        name: md-0
+        variables:
+          overrides:
+          - name: workerConfig
+            value:
+              nodeRegistration:
+                ignorePreflightErrors:
+                - SystemVerification
+              nutanix:
+                machineDetails:
+                  additionalCategories:
+                  - key: Owner
+                    value: zy
+                  bootType: uefi
+                  cluster:
+                    name: NKP
+                    type: name
+                  image:
+                    name: nkp-ubuntu-22.04-release-cis-1.33.5-20251108010758.qcow2
+                    type: name
+                  memorySize: 32Gi
+                  subnets:
+                  - name: Machine_Network_42
+                    type: name
+                  systemDiskSize: 80Gi
+                  vcpuSockets: 8
+                  vcpusPerSocket: 1

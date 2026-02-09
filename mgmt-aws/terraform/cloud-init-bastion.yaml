@@ -1,0 +1,248 @@
+#cloud-config
+hostname: nkp-bastion
+package_update: true
+
+users:
+  - default
+  - name: yolo
+    gecos: My User
+    groups: [sudo, docker]
+    shell: /bin/bash
+    lock_passwd: false
+    sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDTUux7jv/rkLVe2T9ADXOMh2JPt/VlNwuR/Jzcmd67S5uf10B8pOjdeMADV+ZJT2sWTwQCzUWgvzyR2cPE+iPVchJ37MMcoOly23pw68Ba953lwV1KMjGML9EFbrj/naqPlDLH2gpFFcEPcQRXwFlWquBEAJ8SA1xp5c5zk1znETeeBh93a+LOos/hn5lQs4Sj2YAZKyw2WV6YbPBcUSw6yVDiLTnfvjVSzeS/N5q5bDDp+ZjB11tvLWqOMrSIA8kTTkjYwKw9OXD//xelckhBanEPWP5ivYEwxVu/24ZTv7or3NUhnj57pT5Z6GIKqetH5Qnn8stUhwvf9vkg8/zLjjTdb5tUF5l/Z+ha8OPSrUl7zHWECG1XInk/rsBB+u3sfhYh7jWvKUsaspuPmsMDU30IDKMJ1/qqUivXBV9eqx1luY1ag2ozFsmCU10dfecQMYBftpcPumgWMOlsddazhstOkWQNi/Ns+U9o8PDQf9B9cgEhen7bCoaivV/qu3M= yi.zhou@LN475QK5FH
+
+chpasswd:
+  expire: false
+  users:
+    - name: yolo
+      password: Vickyd1010/4u
+      type: text
+
+ssh_pwauth: true
+
+# Create docker group early (before package installations)
+groups:
+  - docker
+
+# Package installations
+packages:
+  - apt-transport-https
+  - vim
+  - htop
+  - net-tools
+  - bash-completion
+  - curl
+  - wget
+  - git
+  - gnupg
+  - lsb-release
+  - ca-certificates
+  - jq
+  - unzip
+  - tree
+  - tmux
+  - awscli
+
+# Write SSH keypair for yolo user
+write_files:
+  - path: /home/yolo/.ssh/id_rsa
+    owner: yolo:yolo
+    permissions: "0600"
+    defer: true
+    content: |
+      -----BEGIN OPENSSH PRIVATE KEY-----
+      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
+      -----END OPENSSH PRIVATE KEY-----
+  - path: /home/yolo/.ssh/id_rsa.pub
+    owner: yolo:yolo
+    permissions: "0644"
+    defer: true
+    content: |
+      ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDTUux7jv/rkLVe2T9ADXOMh2JPt/VlNwuR/Jzcmd67S5uf10B8pOjdeMADV+ZJT2sWTwQCzUWgvzyR2cPE+iPVchJ37MMcoOly23pw68Ba953lwV1KMjGML9EFbrj/naqPlDLH2gpFFcEPcQRXwFlWquBEAJ8SA1xp5c5zk1znETeeBh93a+LOos/hn5lQs4Sj2YAZKyw2WV6YbPBcUSw6yVDiLTnfvjVSzeS/N5q5bDDp+ZjB11tvLWqOMrSIA8kTTkjYwKw9OXD//xelckhBanEPWP5ivYEwxVu/24ZTv7or3NUhnj57pT5Z6GIKqetH5Qnn8stUhwvf9vkg8/zLjjTdb5tUF5l/Z+ha8OPSrUl7zHWECG1XInk/rsBB+u3sfhYh7jWvKUsaspuPmsMDU30IDKMJ1/qqUivXBV9eqx1luY1ag2ozFsmCU10dfecQMYBftpcPumgWMOlsddazhstOkWQNi/Ns+U9o8PDQf9B9cgEhen7bCoaivV/qu3M= yi.zhou@LN475QK5FH
+
+# Run commands after packages are installed
+runcmd:
+  - ufw --force disable
+
+  # Ensure bash-completion is loaded for all users
+  - |
+    for u in ubuntu yolo; do
+      HOME_DIR="/home/$u"
+      if [ -f "$HOME_DIR/.bashrc" ] && ! grep -q "bash-completion" "$HOME_DIR/.bashrc"; then
+        cat << 'EOF' >> "$HOME_DIR/.bashrc"
+
+    # Enable bash-completion
+    if ! shopt -oq posix; then
+      if [ -f /usr/share/bash-completion/bash_completion ]; then
+        . /usr/share/bash-completion/bash_completion
+      elif [ -f /etc/bash_completion ]; then
+        . /etc/bash_completion
+      fi
+    fi
+
+    EOF
+          fi
+        done
+
+        # Root has a different home
+        if [ -f /root/.bashrc ] && ! grep -q "bash-completion" /root/.bashrc; then
+          cat << 'EOF' >> /root/.bashrc
+
+    # Enable bash-completion
+    if ! shopt -oq posix; then
+      if [ -f /usr/share/bash-completion/bash_completion ]; then
+        . /usr/share/bash-completion/bash_completion
+      elif [ -f /etc/bash_completion ]; then
+        . /etc/bash_completion
+      fi
+    fi
+
+    EOF
+        fi
+
+  # Ensure /usr/local/bin is in PATH for all users
+  - echo 'export PATH="/usr/local/bin:$PATH"' >> /home/ubuntu/.bashrc
+  - echo 'export PATH="/usr/local/bin:$PATH"' >> /home/yolo/.bashrc
+  - echo 'export PATH="/usr/local/bin:$PATH"' >> /root/.bashrc
+
+  # Install kubectl
+  - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+  - install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+  - rm -f kubectl
+
+  # Configure kubectl bash completion for all users
+  - echo "source <(kubectl completion bash)" >> /home/ubuntu/.bashrc
+  - echo "alias k=kubectl" >> /home/ubuntu/.bashrc
+  - echo "complete -o default -F __start_kubectl k" >> /home/ubuntu/.bashrc
+  - echo "source <(kubectl completion bash)" >> /home/yolo/.bashrc
+  - echo "alias k=kubectl" >> /home/yolo/.bashrc
+  - echo "complete -o default -F __start_kubectl k" >> /home/yolo/.bashrc
+  - echo "source <(kubectl completion bash)" >> /root/.bashrc
+  - echo "alias k=kubectl" >> /root/.bashrc
+  - echo "complete -o default -F __start_kubectl k" >> /root/.bashrc
+
+  # Install yq
+  - wget -q https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/local/bin/yq
+  - chmod 755 /usr/local/bin/yq
+  - echo "source <(yq completion bash)" >> /home/ubuntu/.bashrc
+  - echo "source <(yq completion bash)" >> /home/yolo/.bashrc
+  - echo "source <(yq completion bash)" >> /root/.bashrc
+
+  # Install helm
+  - curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+  - chmod 755 /usr/local/bin/helm
+  - echo "source <(helm completion bash)" >> /home/ubuntu/.bashrc
+  - echo "source <(helm completion bash)" >> /home/yolo/.bashrc
+  - echo "source <(helm completion bash)" >> /root/.bashrc
+
+  # Install K9s
+  - wget -q https://github.com/derailed/k9s/releases/latest/download/k9s_Linux_amd64.tar.gz
+  - tar zxf k9s_Linux_amd64.tar.gz -C /tmp
+  - mv /tmp/k9s /usr/local/bin/
+  - chmod 755 /usr/local/bin/k9s
+  - rm -f k9s_Linux_amd64.tar.gz
+  - echo "source <(k9s completion bash)" >> /home/ubuntu/.bashrc
+  - echo "source <(k9s completion bash)" >> /home/yolo/.bashrc
+  - echo "source <(k9s completion bash)" >> /root/.bashrc
+
+  # Install Docker
+  - for pkg in docker.io docker-doc docker-compose docker-compose-v2 podman-docker containerd runc; do apt-get remove -y $pkg 2>/dev/null || true; done
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --batch --yes --dearmor -o /etc/apt/keyrings/docker.gpg
+  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  - systemctl enable --now docker
+  - usermod -aG docker ubuntu
+  - usermod -aG docker yolo
+
+  # Install kubeseal
+  - |
+    KUBESEAL_VERSION=$(curl -s https://api.github.com/repos/bitnami-labs/sealed-secrets/tags | jq -r '.[0].name' | cut -c 2-)
+    if [ -n "$KUBESEAL_VERSION" ]; then
+      curl -OL "https://github.com/bitnami-labs/sealed-secrets/releases/download/v$${KUBESEAL_VERSION}/kubeseal-$${KUBESEAL_VERSION}-linux-amd64.tar.gz"
+      tar -xzf kubeseal-$${KUBESEAL_VERSION}-linux-amd64.tar.gz kubeseal
+      install -m 755 kubeseal /usr/local/bin/kubeseal
+      rm -f kubeseal kubeseal-$${KUBESEAL_VERSION}-linux-amd64.tar.gz
+    fi
+
+  # Install Flux CLI
+  - curl -s https://fluxcd.io/install.sh | bash
+  - chmod 755 /usr/local/bin/flux
+  - echo "source <(flux completion bash)" >> /home/ubuntu/.bashrc
+  - echo "source <(flux completion bash)" >> /home/yolo/.bashrc
+  - echo "source <(flux completion bash)" >> /root/.bashrc
+
+  # Install Step CLI
+  - curl -fsSL https://packages.smallstep.com/keys/apt/repo-signing-key.gpg > /etc/apt/trusted.gpg.d/smallstep.asc
+  - echo 'deb [signed-by=/etc/apt/trusted.gpg.d/smallstep.asc] https://packages.smallstep.com/stable/debian debs main' > /etc/apt/sources.list.d/smallstep.list
+  - apt-get update
+  - apt-get install -y step-cli
+  - chmod 755 /usr/bin/step
+  - echo "source <(step completion bash)" >> /home/ubuntu/.bashrc
+  - echo "source <(step completion bash)" >> /home/yolo/.bashrc
+  - echo "source <(step completion bash)" >> /root/.bashrc
+
+  # Install Velero CLI
+  - curl -LO https://github.com/vmware-tanzu/velero/releases/download/v1.17.1/velero-v1.17.1-linux-amd64.tar.gz
+  - tar -xzf velero-v1.17.1-linux-amd64.tar.gz
+  - mv velero-v1.17.1-linux-amd64/velero /usr/local/bin/velero
+  - rm -rf velero-v1.17.1-linux-amd64*
+  - echo "source <(velero completion bash)" >> /home/ubuntu/.bashrc
+  - echo "source <(velero completion bash)" >> /home/yolo/.bashrc
+  - echo "source <(velero completion bash)" >> /root/.bashrc
+
+  # Pre-download files from S3 bucket & setup NKP binary
+  - mkdir -p /home/yolo/mynkp
+  - aws s3 cp s3://yoloz.cloud/mynkp/konvoy-image-bundle-v2.28.5_linux_amd64.tar.gz /home/yolo/mynkp/kib.tar.gz
+  - aws s3 cp s3://yoloz.cloud/mynkp/nkp /usr/local/bin/nkp
+  - chmod 755 /usr/local/bin/nkp
+
+  # Fix permissions on home directories
+  - chown -R ubuntu:ubuntu /home/ubuntu
+  - chown -R yolo:yolo /home/yolo
+
+  # Ensure .ssh directory has correct permissions
+  - mkdir -p /home/yolo/.ssh
+  - chmod 700 /home/yolo/.ssh
+  - chown -R yolo:yolo /home/yolo/.ssh
+
+final_message: "Participant bastion VM is ready! Tools installed: kubectl, helm, k9s, docker, yq, kubeseal, flux, istio, step, velero"
+
