@@ -3,12 +3,12 @@ apiVersion: workspaces.kommander.mesosphere.io/v1alpha1
 kind: Project
 metadata:
   annotations:
-    kommander.mesosphere.io/description: "Project space for CKS resources"
-    kommander.mesosphere.io/display-name: "CKS Project"
-  name: cks
+    kommander.mesosphere.io/description: "Project space for NKPChampion resources"
+    kommander.mesosphere.io/display-name: "NKPChampion Project"
+  name: nkpchampion
   namespace: zy
 spec:
-  namespaceName: cks
+  namespaceName: nkpchampion
   placement:
     clusters:
     - name: zy-nkp-wkld
