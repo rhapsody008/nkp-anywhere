@@ -4,7 +4,7 @@ package_update: true
 
 users:
   - default
-  - name: yolo
+  - name: nutanix
     gecos: My User
     groups: [sudo, docker]
     shell: /bin/bash
@@ -16,8 +16,8 @@ users:
 chpasswd:
   expire: false
   users:
-    - name: yolo
-      password: Vickyd1010/4u
+    - name: nutanix
+      password: ntnx/4NKP
       type: text
 
 ssh_pwauth: true
@@ -45,10 +45,10 @@ packages:
   - tmux
   - awscli
 
-# Write SSH keypair for yolo user
+# Write SSH keypair for nutanix user
 write_files:
-  - path: /home/yolo/.ssh/id_rsa
-    owner: yolo:yolo
+  - path: /home/nutanix/.ssh/id_rsa
+    owner: nutanix:nutanix
     permissions: "0600"
     defer: true
     content: |
@@ -90,8 +90,8 @@ write_files:
       kBqLYFZH4PFyWk740ChTGX3jeWPR00ZDIVKL2opYQphrMgzJqpe+PgFrKZImWEqxc4d18T
       h8/VuUDwx0jGEAAAASeWkuemhvdUBMTjQ3NVFLNUZIAQ==
       -----END OPENSSH PRIVATE KEY-----
-  - path: /home/yolo/.ssh/id_rsa.pub
-    owner: yolo:yolo
+  - path: /home/nutanix/.ssh/id_rsa.pub
+    owner: nutanix:nutanix
     permissions: "0644"
     defer: true
     content: |
@@ -103,7 +103,7 @@ runcmd:
 
   # Ensure bash-completion is loaded for all users
   - |
-    for u in ubuntu yolo; do
+    for u in ubuntu nutanix; do
       HOME_DIR="/home/$u"
       if [ -f "$HOME_DIR/.bashrc" ] && ! grep -q "bash-completion" "$HOME_DIR/.bashrc"; then
         cat << 'EOF' >> "$HOME_DIR/.bashrc"
@@ -139,7 +139,7 @@ runcmd:
 
   # Ensure /usr/local/bin is in PATH for all users
   - echo 'export PATH="/usr/local/bin:$PATH"' >> /home/ubuntu/.bashrc
-  - echo 'export PATH="/usr/local/bin:$PATH"' >> /home/yolo/.bashrc
+  - echo 'export PATH="/usr/local/bin:$PATH"' >> /home/nutanix/.bashrc
   - echo 'export PATH="/usr/local/bin:$PATH"' >> /root/.bashrc
 
   # Install kubectl
@@ -151,9 +151,9 @@ runcmd:
   - echo "source <(kubectl completion bash)" >> /home/ubuntu/.bashrc
   - echo "alias k=kubectl" >> /home/ubuntu/.bashrc
   - echo "complete -o default -F __start_kubectl k" >> /home/ubuntu/.bashrc
-  - echo "source <(kubectl completion bash)" >> /home/yolo/.bashrc
-  - echo "alias k=kubectl" >> /home/yolo/.bashrc
-  - echo "complete -o default -F __start_kubectl k" >> /home/yolo/.bashrc
+  - echo "source <(kubectl completion bash)" >> /home/nutanix/.bashrc
+  - echo "alias k=kubectl" >> /home/nutanix/.bashrc
+  - echo "complete -o default -F __start_kubectl k" >> /home/nutanix/.bashrc
   - echo "source <(kubectl completion bash)" >> /root/.bashrc
   - echo "alias k=kubectl" >> /root/.bashrc
   - echo "complete -o default -F __start_kubectl k" >> /root/.bashrc
@@ -162,14 +162,14 @@ runcmd:
   - wget -q https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/local/bin/yq
   - chmod 755 /usr/local/bin/yq
   - echo "source <(yq completion bash)" >> /home/ubuntu/.bashrc
-  - echo "source <(yq completion bash)" >> /home/yolo/.bashrc
+  - echo "source <(yq completion bash)" >> /home/nutanix/.bashrc
   - echo "source <(yq completion bash)" >> /root/.bashrc
 
   # Install helm
   - curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
   - chmod 755 /usr/local/bin/helm
   - echo "source <(helm completion bash)" >> /home/ubuntu/.bashrc
-  - echo "source <(helm completion bash)" >> /home/yolo/.bashrc
+  - echo "source <(helm completion bash)" >> /home/nutanix/.bashrc
   - echo "source <(helm completion bash)" >> /root/.bashrc
 
   # Install K9s
@@ -179,7 +179,7 @@ runcmd:
   - chmod 755 /usr/local/bin/k9s
   - rm -f k9s_Linux_amd64.tar.gz
   - echo "source <(k9s completion bash)" >> /home/ubuntu/.bashrc
-  - echo "source <(k9s completion bash)" >> /home/yolo/.bashrc
+  - echo "source <(k9s completion bash)" >> /home/nutanix/.bashrc
   - echo "source <(k9s completion bash)" >> /root/.bashrc
 
   # Install Docker
@@ -191,7 +191,7 @@ runcmd:
   - apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
   - systemctl enable --now docker
   - usermod -aG docker ubuntu
-  - usermod -aG docker yolo
+  - usermod -aG docker nutanix
 
   # Install kubeseal
   - |
@@ -207,7 +207,7 @@ runcmd:
   - curl -s https://fluxcd.io/install.sh | bash
   - chmod 755 /usr/local/bin/flux
   - echo "source <(flux completion bash)" >> /home/ubuntu/.bashrc
-  - echo "source <(flux completion bash)" >> /home/yolo/.bashrc
+  - echo "source <(flux completion bash)" >> /home/nutanix/.bashrc
   - echo "source <(flux completion bash)" >> /root/.bashrc
 
   # Install Step CLI
@@ -217,7 +217,7 @@ runcmd:
   - apt-get install -y step-cli
   - chmod 755 /usr/bin/step
   - echo "source <(step completion bash)" >> /home/ubuntu/.bashrc
-  - echo "source <(step completion bash)" >> /home/yolo/.bashrc
+  - echo "source <(step completion bash)" >> /home/nutanix/.bashrc
   - echo "source <(step completion bash)" >> /root/.bashrc
 
   # Install Velero CLI
@@ -226,23 +226,17 @@ runcmd:
   - mv velero-v1.17.1-linux-amd64/velero /usr/local/bin/velero
   - rm -rf velero-v1.17.1-linux-amd64*
   - echo "source <(velero completion bash)" >> /home/ubuntu/.bashrc
-  - echo "source <(velero completion bash)" >> /home/yolo/.bashrc
+  - echo "source <(velero completion bash)" >> /home/nutanix/.bashrc
   - echo "source <(velero completion bash)" >> /root/.bashrc
-
-  # Pre-download files from S3 bucket & setup NKP binary
-  - mkdir -p /home/yolo/mynkp
-  - aws s3 cp s3://yoloz.cloud/mynkp/konvoy-image-bundle-v2.28.5_linux_amd64.tar.gz /home/yolo/mynkp/kib.tar.gz
-  - aws s3 cp s3://yoloz.cloud/mynkp/nkp /usr/local/bin/nkp
-  - chmod 755 /usr/local/bin/nkp
 
   # Fix permissions on home directories
   - chown -R ubuntu:ubuntu /home/ubuntu
-  - chown -R yolo:yolo /home/yolo
+  - chown -R nutanix:nutanix /home/nutanix
 
   # Ensure .ssh directory has correct permissions
-  - mkdir -p /home/yolo/.ssh
-  - chmod 700 /home/yolo/.ssh
-  - chown -R yolo:yolo /home/yolo/.ssh
+  - mkdir -p /home/nutanix/.ssh
+  - chmod 700 /home/nutanix/.ssh
+  - chown -R nutanix:nutanix /home/nutanix/.ssh
 
 final_message: "Participant bastion VM is ready! Tools installed: kubectl, helm, k9s, docker, yq, kubeseal, flux, istio, step, velero"
 

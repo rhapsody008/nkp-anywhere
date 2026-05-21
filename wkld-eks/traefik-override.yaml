@@ -1,0 +1,14 @@
+# Prerequisite: have a public subnet in the same VPC the cluster sits in
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: traefik-overrides
+  namespace: zy   # the workspace namespace on the MGMT cluster
+data:
+  values.yaml: |
+    service:
+      annotations:
+        service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+        service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: instance
+        service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"

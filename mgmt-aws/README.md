@@ -38,11 +38,6 @@ kubectl -n kommander get secret dkp-credentials -o go-template='Username: {{.dat
 kubectl -n kommander get svc kommander-traefik -o go-template='https://{{with index .status.loadBalancer.ingress 0}}{{or .hostname .ip}}{{end}}/dkp/kommander/dashboard{{ "\n"}}'
 ```
 
-9. Install metrics-server
-```
-kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-```
-
 # Destroy Steps
 ***!!! Delete NKP Cluster before Terraform Destroy!!!***
 

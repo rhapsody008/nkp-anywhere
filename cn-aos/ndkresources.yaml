@@ -1,0 +1,88 @@
+CNAOS cluster id 6e772d7d-9968-4c57-82ca-92a80ed94f09
+Prism Central uuid 08107f56-846a-436c-8b9b-9d417b66a310
+
+apiVersion: dataservices.nutanix.com/v1alpha1
+kind: StorageCluster
+metadata:
+ name: zy-storage-cluster-eks
+spec:
+ storageServerUuid: 6e772d7d-9968-4c57-82ca-92a80ed94f09
+ managementServerUuid: 08107f56-846a-436c-8b9b-9d417b66a310
+
+
+ 00065013-7dbf-8371-181e-3cecef59d78d
+
+ 447be368-1156-4116-89f9-4f6884988ae1
+---
+apiVersion: dataservices.nutanix.com/v1alpha1
+kind: StorageCluster
+metadata:
+ name: zy-storage-cluster-nutanix
+spec:
+ storageServerUuid: 00065013-7dbf-8371-181e-3cecef59d78d
+ managementServerUuid: 447be368-1156-4116-89f9-4f6884988ae1
+
+
+---
+apiVersion: dataservices.nutanix.com/v1alpha1
+kind: Remote
+metadata:
+  name: remote-nutanix-ndk
+spec:
+  clusterName: zy-storage-cluster-nutanix
+  ndkServiceIp: 10.38.41.248
+  ndkServicePort: 2021
+
+
+
+
+helm upgrade --install tailscale-operator tailscale/tailscale-operator \
+  --namespace=tailscale \
+  --create-namespace \
+  --set oauth.clientId="kBoHiDpYdy11CNTRL" \
+  --set oauth.clientSecret="tskey-client-kBoHiDpYdy11CNTRL-gcZfGL9Xr6QikKt3QFN96Q6LBfZz5ZgUP"
+
+
+curl -k -X POST https://10.10.3.94:9440/api/nutanix/v3/availability_zones \
+     -u admin:'ntnx/4NKP' \
+     -H "Content-Type: application/json" \
+     -d '{
+  "spec": {
+    "name": "Remote-Site-PC2",
+    "resources": {
+      "management_server": {
+        "ip_spec": {
+          "ip": "10.38.41.7",
+          "port": 9440
+        },
+        "type": "PRISM_CENTRAL",
+        "credentials": {
+          "username": "admin",
+          "password": "ntnxT3ch/4Kuok"
+        }
+      }
+    }
+  },
+  "metadata": {
+    "kind": "availability_zone"
+  }
+}'
+
+curl -k --request POST \
+  --url https://10.10.3.94:9440/api/nutanix/v3/availability_zones \
+  --header 'Accept: application/json' \
+  -u admin:'ntnx/4NKP' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "api_version": "3.1.0",
+    "metadata": {
+      "kind": "availability_zone"
+    },
+    "spec": {
+      "name": "remote-pc-az",
+      "resources": {
+        "management_plane_type": "PC",
+        "management_url": "https://10.38.41.7:9440"
+      }
+    }
+  }'

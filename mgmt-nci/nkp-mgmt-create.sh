@@ -4,7 +4,7 @@ export CLUSTER_NAME="nkp-mgmt-01"
 
 export NUTANIX_ENDPOINT="https://10.38.66.7:9440/"
 
-export NUTANIX_USER=admin
+export NUTANIX_USER="admin"
 export NUTANIX_PASSWORD="nx2Tech034!"
 
 export AIRGAPPED=false
@@ -89,11 +89,3 @@ nkp create cluster nutanix \
 --registry-mirror-password=${REGISTRY_PASSWORD} \
 \
 --verbose 5
-
-# ./nkp-v2.16.1/cli/nkp push bundle \
-# --bundle "nkp-v2.16.1/container-images/konvoy-image-bundle-v2.16.1.tar" \
-# --bundle "nkp-v2.16.1/container-images/kommander-image-bundle-v2.16.1.tar" \
-# --to-registry="https://zy-registry.ntnxlab.local/library" \
-# --to-registry-username="admin" \
-# --to-registry-password="Harbor12345" \
-# --to-registry-ca-cert-file="/home/nutanix/certs/registry_ca.crt"

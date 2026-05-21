@@ -1,0 +1,1285 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  EnableSSHToAccessJumphost:
+    Type: String
+    Description: Select Yes to enable SSH access to Orchestrator/JumpHost
+    Default: 'Yes'
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+
+  OrchestratorAvailabilityZone:
+    Type: String
+    Description: Availability Zone for Cloud Native AOS Orchestrator/Jumphost Deployment
+    AllowedValues:
+      - us-west-2a
+      - us-west-2b
+      - us-west-2c
+      - eu-central-1a
+      - eu-central-1b
+      - eu-central-1c
+
+  AvailabilityZone:
+    Type: String
+    Description: Availability Zone for Cloud Native AOS Cluster Deployment
+    AllowedValues:
+      - us-west-2a
+      - us-west-2b
+      - us-west-2c
+      - eu-central-1a
+      - eu-central-1b
+      - eu-central-1c
+
+  RemoteClusterAvailabilityZone:
+    Type: String
+    Description: Availability Zone for Cloud Native AOS Cluster Deployment
+    AllowedValues:
+      - us-west-2a
+      - us-west-2b
+      - us-west-2c
+      - eu-central-1a
+      - eu-central-1b
+      - eu-central-1c
+    Default: us-west-2b
+
+  DeployRemoteCluster:
+    Type: String
+    Description: Select Yes if the DR cluster should be deployed. Leave all the
+      below fields blank if you do not want to deploy DR Cluster.
+    AllowedValues:
+      - 'Yes'
+      - 'No'
+
+  AdditionalDiskSize:
+    Type: Number
+    Description: Enter the Additional Disk size (in GiB) Per Node (Cold Tier)
+    MinValue: 0
+    MaxValue: 139695
+    Default: 0
+    ConstraintDescription: Must be a number.
+
+  EKSClusterName:
+    Type: String
+    Description: Enter the name of the EKS Cluster (Alphanumeric characters and hyphens only, Max Length - 25 Characters)
+    MaxLength: 25
+    Default: 'mtx-demo_zy-eks-wlpk6'
+    AllowedPattern: '[a-zA-Z0-9-_]+'
+    ConstraintDescription: Must contain only alphanumeric characters and hyphens (Max Length - 25 Characters)
+
+  RemoteEKSClusterName:
+    Type: String
+    Description: Enter the name of the EKS Cluster of the DR Setup. Leave blank
+      if not applicable. (Alphanumeric characters and hyphens only, Max Length - 25 Characters)
+    MaxLength: 25
+    Default: ''
+    AllowedPattern: '[a-zA-Z0-9-]*'
+    ConstraintDescription: Must contain only alphanumeric characters and hyphens (Max Length - 25 Characters)
+
+  KeyPair:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Enter the name of SSH Key-Pair to be used with the instance
+  
+  ManifestVersion:
+    Type: String
+    Description: Enter the Product Version of the Cloud Native AOS Cluster for deployment. 
+    AllowedPattern: ^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
+    ConstraintDescription: Must be a valid semver string.
+    Default: '1.0.0'
+    AllowedValues:
+      - '1.0.0'
+
+  NCSClusterName:
+    Type: String
+    Description: Enter the Name for Cloud Native AOS Cluster (Alphanumeric characters, numbers and hyphens only, Max Length - 25 Characters)
+    MaxLength: 25
+    AllowedPattern: ^[a-z0-9-]+$
+    ConstraintDescription: Must contain only lowercase characters, numbers and hyphens. (Max Length - 25 Characters)
+
+  RemoteNCSClusterName:
+    Type: String
+    Description: Enter the Name for Cloud Native AOS Cluster for DR Setup  (Alphanumeric characters, numbers and hyphens only, Max Length - 25 Characters)
+    MaxLength: 25
+    AllowedPattern: ^$|^[a-z0-9-]+$
+    ConstraintDescription: Must contain only lowercase characters, numbers and hyphens. (Max Length - 25 Characters)
+    Default: ''
+
+  NodeCount:
+    Type: Number
+    Description: Enter the number of nodes to create for Cloud Native AOS Cluster (Min 3, Max 15)
+    MinValue: 1
+    MaxValue: 15
+    ConstraintDescription: Must be a number between 3 and 15.
+    Default: 3
+
+  NutanixLicense:
+    Type: String
+    Description: Enter the License Key for Cloud Native AOS
+    Default: 'TDIwSlVMMjUgQUtJQVdPT1hUWktWQUxQMlRIM08gZFpNQW5FUFhKano5NUlpdGJjb212S2pncS92YUUxejVUODF1Unh4SQ=='
+    AllowedPattern: ^[a-zA-Z0-9+/=]+$
+    ConstraintDescription: Must be a Non-Empty String.
+
+  DockerHubUsername:
+    Type: String
+    Description: This is will be  used to pull the images for the deployment
+    Default: 'ntnxsvcregistrycnaos'
+    ConstraintDescription: Must be a Non-Empty String.
+    AllowedPattern: ^\S.*\S$|^\S$|^\S.*\S.*\S$
+  
+  ProductAccessToken:
+    Type: String
+    Description: Enter the Product Access Token.
+    Default: 
+    AllowedPattern: ^\S.*\S$|^\S$|^\S.*\S.*\S$
+    ConstraintDescription: Must be a Non-Empty String.
+
+  PrimaryOwner:
+    Type: String
+    Description: Set the User Name of Primary Resource Owner for deployment (Alphanumeric characters, dots and hyphens only)
+    AllowedPattern: ^[a-zA-Z0-9-.]+$
+    ConstraintDescription: User Name of Primary Resource Owner should not be empty. (Allowed Characters- a-z, A-Z, 0-9, - and .)
+
+  ReplicationFactor:
+    Type: Number
+    Description: Enter the replication factor for Cloud Native AOS Cluster
+    AllowedValues:
+      - 2
+    Default: 2
+
+  WorkerNodeInstanceType:
+    Type: String
+    Description: Worker Node Instance Type
+    AllowedValues:
+      - i3en.6xlarge
+      - i3en.12xlarge
+      - i3en.24xlarge
+      - i4i.8xlarge
+      - i4i.16xlarge
+      - i4i.32xlarge
+      - m6id.12xlarge
+      - m6id.16xlarge
+      - m6id.24xlarge
+      - m6id.32xlarge
+      - m5d.8xlarge
+
+  IPToAccessJumphost:
+    Type: String
+    Description: Provide IP address in /32 format which is to be granted access to Orchestrator/Jumphost via SSH
+    MinLength: '9'
+    MaxLength: '18'
+    Default: '0.0.0.0/0'
+    AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/0
+    ConstraintDescription: Provide Valid IP Address in CIDR format (a.b.c.d/32)
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Cloud Native AOS License Details
+        Parameters:
+          - NutanixLicense
+          - DockerHubUsername
+          - ProductAccessToken
+      - Label:
+          default: User Details
+        Parameters:
+          - PrimaryOwner
+      - Label:
+          default: EKS Cluster Details
+        Parameters:
+          - EKSClusterName
+          - WorkerNodeInstanceType
+      - Label:
+          default: Cloud Native AOS Cluster Details
+        Parameters:
+          - AvailabilityZone
+          - NCSClusterName
+          - NodeCount
+          - AdditionalDiskSize
+          - ReplicationFactor
+          - ManifestVersion
+      - Label:
+          default: Cloud Native AOS Jumphost Details
+        Parameters:
+          - OrchestratorAvailabilityZone
+          - KeyPair
+          - EnableSSHToAccessJumphost
+          - IPToAccessJumphost
+      - Label:
+          default: DR Cluster Details
+        Parameters:
+          - DeployRemoteCluster
+          - RemoteEKSClusterName
+          - RemoteClusterAvailabilityZone
+          - RemoteNCSClusterName
+    ParameterLabels:
+      OrchestratorAvailabilityZone:
+        default: Jumphost Availability Zone [Required]
+      AvailabilityZone:
+        default: Availability Zone [Required]
+      RemoteClusterAvailabilityZone:
+        default: DR Cluster Availability Zone [Required if creating DR setup]
+      DeployRemoteCluster:
+        default: Do you want to deploy DR Cluster ? [Required]
+      AdditionalDiskSize:
+        default: Additional Disk Size Per Node (Cold Tier) [Required]
+      EKSClusterName:
+        default: EKS Cluster name [Required]
+      RemoteEKSClusterName:
+        default: DR EKS Cluster name [Required if creating DR setup]
+      KeyPair:
+        default: SSH Key Pair Name [Required]
+      ManifestVersion:
+        default: Cloud Native AOS Product Version [Required]
+      NCSClusterName:
+        default: Cloud Native AOS Cluster name [Required]
+      NodeCount:
+        default: Number of nodes [Required]
+      RemoteNCSClusterName:
+        default: DR Cloud Native AOS Cluster name [Required if creating DR setup]
+      NutanixLicense:
+        default: Cloud Native AOS License Key [Required]
+      DockerHubUsername:
+        default: Docker Hub Username [Required]
+      ProductAccessToken:
+        default: Product Access Token [Required]
+      PrimaryOwner:
+        default: User Name [Required]
+      ReplicationFactor:
+        default: Replication factor [Required]
+      WorkerNodeInstanceType:
+        default: Instance Type for Worker Nodes in EKS Cluster [Required]
+      EnableSSHToAccessJumphost:
+        default: Enable SSH Access to the Jumphost [Optional]
+      IPToAccessJumphost:
+        default: IP CIDR for Ingress Access to Cloud Native AOS Jumphost [Optional]
+
+Conditions:
+  CreateRemoteSetupCondition: !Equals
+    - !Ref DeployRemoteCluster
+    - 'Yes'
+  CreateOrchestratorVM: !Equals
+    - 'Yes'
+    - 'Yes'
+  ManifestVersionIsLatest: !Equals 
+    - !Ref ManifestVersion
+    -  'Latest'
+  ManifestVersionProvided: !Not 
+    - !Equals 
+      - !Ref ManifestVersion
+      -  ''
+  EnableSSHToOrchestrator: !Equals
+    - !Ref EnableSSHToAccessJumphost
+    - 'Yes'
+  DeployJumphostOnPrivateSubnet: !Equals
+    - !Ref EnableSSHToAccessJumphost
+    - 'No'
+
+Mappings:
+  AMIRegionMapping:
+    us-west-2:
+      AMI: ami-0b20a6f09484773af 
+    eu-central-1:
+      AMI: ami-00cf59bc9978eb266
+  Constants:
+    OrchestratorVPCCIDR:
+      Value: 10.0.0.0/16
+    OrchestratorPublicSubnetCIDR:
+      Value: 10.0.0.0/24
+    OrchestratorPrivateSubnetCIDR:
+      Value: 10.0.1.0/24
+
+Resources:
+  NCSOrchestratorPolicy:
+    Type: AWS::IAM::Policy
+    Condition: CreateOrchestratorVM
+    Properties:
+      PolicyName: NCSOrchestratorPolicy
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Statement1
+            Effect: Allow
+            Action:
+              - iam:CreateOpenIDConnectProvider
+              - iam:DeleteOpenIDConnectProvider
+              - iam:PutRolePolicy
+              - iam:AddClientIDToOpenIDConnectProvider
+              - iam:GetPolicyVersion
+              - iam:GetAccountPasswordPolicy
+              - iam:ListRoleTags
+              - iam:GetMFADevice
+              - iam:ListServerCertificates
+              - iam:GenerateServiceLastAccessedDetails
+              - iam:RemoveRoleFromInstanceProfile
+              - iam:CreateRole
+              - iam:AttachRolePolicy
+              - iam:ListServiceSpecificCredentials
+              - iam:ListSigningCertificates
+              - iam:ListVirtualMFADevices
+              - iam:AddRoleToInstanceProfile
+              - iam:ListSSHPublicKeys
+              - iam:SimulateCustomPolicy
+              - iam:DetachRolePolicy
+              - iam:SimulatePrincipalPolicy
+              - iam:GetAccountEmailAddress
+              - iam:ListAttachedRolePolicies
+              - iam:ListOpenIDConnectProviderTags
+              - iam:ListSAMLProviderTags
+              - iam:ListRolePolicies
+              - iam:GetAccountAuthorizationDetails
+              - iam:GetCredentialReport
+              - iam:ListPolicies
+              - iam:GetServerCertificate
+              - iam:GetRole
+              - iam:ListSAMLProviders
+              - iam:GetPolicy
+              - iam:GetAccessKeyLastUsed
+              - iam:ListEntitiesForPolicy
+              - iam:DeleteRole
+              - iam:GetUserPolicy
+              - iam:ListGroupsForUser
+              - iam:GetAccountName
+              - ec2:*
+              - iam:GetGroupPolicy
+              - iam:GetOpenIDConnectProvider
+              - eks:*
+              - iam:ListSTSRegionalEndpointsStatus
+              - iam:GetRolePolicy
+              - iam:GetAccountSummary
+              - iam:CreateInstanceProfile
+              - iam:GenerateCredentialReport
+              - iam:GetServiceLastAccessedDetailsWithEntities
+              - iam:ListPoliciesGrantingServiceAccess
+              - iam:ListInstanceProfileTags
+              - iam:ListMFADevices
+              - iam:GetServiceLastAccessedDetails
+              - iam:GetGroup
+              - iam:GetContextKeysForPrincipalPolicy
+              - iam:GetOrganizationsAccessReport
+              - iam:GetServiceLinkedRoleDeletionStatus
+              - iam:ListInstanceProfilesForRole
+              - iam:PassRole
+              - iam:GenerateOrganizationsAccessReport
+              - iam:DeleteRolePolicy
+              - iam:GetCloudFrontPublicKey
+              - iam:ListAttachedUserPolicies
+              - iam:ListAttachedGroupPolicies
+              - iam:ListPolicyTags
+              - iam:GetSAMLProvider
+              - iam:ListAccessKeys
+              - iam:DeleteInstanceProfile
+              - iam:GetInstanceProfile
+              - iam:ListGroupPolicies
+              - iam:ListCloudFrontPublicKeys
+              - iam:GetSSHPublicKey
+              - iam:ListRoles
+              - iam:ListUserPolicies
+              - iam:ListInstanceProfiles
+              - iam:GetContextKeysForCustomPolicy
+              - iam:ListPolicyVersions
+              - iam:ListOpenIDConnectProviders
+              - iam:ListServerCertificateTags
+              - iam:ListAccountAliases
+              - iam:ListUsers
+              - iam:GetUser
+              - iam:ListGroups
+              - iam:ListMFADeviceTags
+              - iam:GetLoginProfile
+              - iam:ListUserTags
+              - iam:CreateServiceLinkedRole
+              - iam:CreatePolicy
+              - iam:DeletePolicy
+              - cloudformation:*
+              - logs:DescribeLogGroups
+              - logs:DescribeLogStreams
+              - logs:ListTagsLogGroup
+              - logs:GetLogEvents
+              - logs:GetLogGroupFields
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+              - logs:PutResourcePolicy
+              - iam:UpdateAssumeRolePolicy
+              - iam:TagRole
+              - iam:TagPolicy
+              - iam:UntagRole
+              - iam:UntagPolicy
+              - iam:TagInstanceProfile
+              - iam:TagOpenIDConnectProvider
+              - iam:UntagOpenIDConnectProvider
+              - autoscaling:CreateOrUpdateTags
+              - autoscaling:DescribeTags
+              - autoscaling:DeleteTags
+              - tag:GetResources
+              - tag:TagResources
+              - tag:UntagResources
+            Resource:
+              - '*'
+      Roles:
+        - !Ref NCSOrchestratorRole
+
+  NCSOrchestratorRole:
+    Type: AWS::IAM::Role
+    Condition: CreateOrchestratorVM
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess
+        - arn:aws:iam::aws:policy/AmazonEC2FullAccess
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+        - arn:aws:iam::aws:policy/AmazonEKSServicePolicy
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Tags:
+        - Key: primary_owner
+          Value: !Ref PrimaryOwner
+        - Key: ncs-component-type
+          Value: ncs-jumphost
+
+  NCSOrchestratorInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Condition: CreateOrchestratorVM
+    Properties:
+      Roles:
+        - !Ref NCSOrchestratorRole
+    
+
+  VPC:
+    Type: AWS::EC2::VPC
+    DependsOn: NCSOrchestratorVolume
+    Properties:
+      CidrBlock: !FindInMap [Constants, OrchestratorVPCCIDR, Value]
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: primary_owner
+          Value: !Ref PrimaryOwner
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-Orchestrator-VPC"
+        - Key: ncs-component-type
+          Value: ncs-jumphost
+    Condition: CreateOrchestratorVM
+
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Condition: DeployJumphostOnPrivateSubnet
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref OrchestratorAvailabilityZone
+      CidrBlock: !FindInMap [Constants, OrchestratorPrivateSubnetCIDR, Value]
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: primary_owner
+          Value: !Ref PrimaryOwner
+
+  NATGateway:
+    Type: AWS::EC2::NatGateway
+    Condition: DeployJumphostOnPrivateSubnet
+    DependsOn:
+      - PublicSubnet
+      - NatGatewayEIP
+    Properties:
+      AllocationId: !GetAtt NatGatewayEIP.AllocationId
+      SubnetId: !Ref PublicSubnet
+      Tags:
+        - Key: primary_owner
+          Value: !Ref PrimaryOwner
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Condition: DeployJumphostOnPrivateSubnet
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: primary_owner
+          Value: !Ref PrimaryOwner
+
+  PrivateRoute:
+    Type: AWS::EC2::Route
+    Condition: DeployJumphostOnPrivateSubnet
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref NATGateway
+
+  PrivateSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: DeployJumphostOnPrivateSubnet
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnet
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Condition: CreateOrchestratorVM
+    Properties:
+      Tags:
+        - Key: primary_owner
+          Value: !Ref PrimaryOwner
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-Orchestrator-IGW"
+        - Key: ncs-component-type
+          Value: ncs-jumphost
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Condition: CreateOrchestratorVM
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Condition: CreateOrchestratorVM
+    Properties:
+      VpcId: !Ref VPC
+      AvailabilityZone: !Ref OrchestratorAvailabilityZone
+      CidrBlock: !FindInMap [Constants, OrchestratorPublicSubnetCIDR, Value]
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: primary_owner
+          Value: !Ref PrimaryOwner
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-Orchestrator-Public-Subnet"
+        - Key: ncs-component-type
+          Value: ncs-jumphost
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Condition: CreateOrchestratorVM
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: primary_owner
+          Value: !Ref PrimaryOwner
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-Orchestrator-rt"
+        - Key: ncs-component-type
+          Value: ncs-jumphost
+
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    Condition: CreateOrchestratorVM
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Condition: CreateOrchestratorVM
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet
+
+  NCSOrchestratorVolume:
+    Type: AWS::EC2::Volume
+    Condition: CreateOrchestratorVM
+    Properties:
+      AvailabilityZone: !Ref OrchestratorAvailabilityZone
+      Size: 20
+      Tags:
+        - Key: primary_owner
+          Value: !Ref PrimaryOwner
+        - Key: Name
+          Value: !Sub "${AWS::StackName}-Orchestrator-Volume"
+        - Key: ncs-component-type
+          Value: ncs-jumphost
+
+  NatGatewayEIP:
+    Type: AWS::EC2::EIP
+    Condition: DeployJumphostOnPrivateSubnet
+    Properties:
+      Tags:
+        - Key: primary_owner
+          Value: !Ref PrimaryOwner
+
+  OrchestratorEIP:
+    Type: AWS::EC2::EIP
+    Condition: CreateOrchestratorVM
+    Properties:
+      Tags:
+        - Key: primary_owner
+          Value: !Ref PrimaryOwner
+        - Key: ncs-component-type
+          Value: ncs-jumphost
+
+  NCSOrchestratorTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Condition: CreateOrchestratorVM
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          files:
+            /opt/nutanix/ncs/setup.sh:
+              content:
+                Fn::Sub:
+                  - |
+                    #!/bin/bash
+                    set -e
+                    set -x
+                    BUCKET_NAME="nutanix-ncs-metadata-${AWS::AccountId}"
+                    CLUSTER_REGION=$(echo ${AvailabilityZone} | sed 's/[a-z]$//')
+                    BUCKET_REGION="None"
+                    HELM_REGISTRY=$([[ ${ProductAccessToken} == "ECR" ]] && echo "ECR" || echo "Nutanix")
+                    get_bucket_location() {
+                        aws s3api get-bucket-location --bucket "$BUCKET_NAME" --output text 2>&1
+                    }
+                    create_bucket() {
+                        aws s3 mb "s3://$BUCKET_NAME" --region "$CLUSTER_REGION"
+                    }
+                    enable_bucket_versioning() {
+                        aws s3api put-bucket-versioning --bucket "$BUCKET_NAME" --region "$BUCKET_REGION" --versioning-configuration Status=Enabled
+                    }
+                    create_s3_bucket_if_not_exists() {
+                        set +e
+                        BUCKET_LOCATION_OUTPUT=$(get_bucket_location)
+                        BUCKET_LOCATION_STATUS=$?
+                        set -e
+      
+                        if [ $BUCKET_LOCATION_STATUS -eq 0 ]; then
+                            handle_existing_bucket "$BUCKET_LOCATION_OUTPUT"
+                        else
+                            handle_bucket_creation "$BUCKET_LOCATION_OUTPUT"
+                        fi
+                    }
+                    handle_existing_bucket() {
+                        local BUCKET_LOCATION_OUTPUT=$1
+                        BUCKET_LOCATION=$(echo "$BUCKET_LOCATION_OUTPUT" | tr -d '\r')
+                        [ "$BUCKET_LOCATION" == "None" ] && BUCKET_LOCATION="us-east-1"
+                        BUCKET_REGION=$BUCKET_LOCATION
+                        echo "Bucket already exists in region $BUCKET_LOCATION."
+                        if ! aws s3api get-bucket-versioning --bucket "$BUCKET_NAME" | jq -e '.Status == "Enabled"' > /dev/null; then
+                            enable_bucket_versioning && echo "Bucket versioning enabled." || { echo "Failed to enable bucket versioning."; return 1; }
+                        else
+                            echo "Bucket versioning already enabled."
+                        fi
+                    }
+                    # Function to handle bucket creation
+                    handle_bucket_creation() {
+                        local BUCKET_LOCATION_OUTPUT=$1
+                        if echo "$BUCKET_LOCATION_OUTPUT" | grep -q 'NoSuchBucket'; then
+                            echo "Bucket does not exist, creating now..."
+                            if create_bucket; then
+                                echo "Bucket created successfully in region $CLUSTER_REGION."
+                                BUCKET_REGION=$CLUSTER_REGION
+                            else
+                                echo "Failed to create bucket."
+                                return 1
+                            fi
+                            if enable_bucket_versioning; then
+                                echo "Bucket versioning enabled."
+                            else
+                                echo "Failed to enable bucket versioning."
+                                return 1
+                            fi
+                        else
+                            echo "Error checking bucket location: $BUCKET_LOCATION_OUTPUT"
+                            return 1
+                        fi
+                    }
+                    upload_log_to_s3() {
+                    echo "An error occurred, uploading cloud-init log to S3..."
+                    CURRENT_DATETIME=$(date +"%Y-%m-%d_%H-%M-%S")
+                    LOG_LOCATION="/tmp/jumphost_logs_""$CURRENT_DATETIME"
+                    # Create a temporary directory for log files
+                    mkdir -p $LOG_LOCATION
+                    # Copy the logs to the temporary directory
+                    cp /var/log/cloud-init.log /var/log/cloud-init-output.log $LOG_LOCATION"/"
+                    if [ -f /opt/nutanix/ncs/deployment.log ]; then
+                      cp /opt/nutanix/ncs/deployment.log $LOG_LOCATION"/"
+                    fi
+                    if [ -f /opt/nutanix/ncs/terraform.log ]; then
+                      cp /opt/nutanix/ncs/terraform.log $LOG_LOCATION"/"
+                    fi
+                    if [ -f /opt/nutanix/ncs/terraform-output.log ]; then
+                      cp /opt/nutanix/ncs/terraform-output.log $LOG_LOCATION"/"
+                    fi
+                    # Create the tarball from the temporary directory
+                    tar -czvf "$LOG_LOCATION".tar.gz -C $LOG_LOCATION .
+                    if aws s3 cp "$LOG_LOCATION".tar.gz s3://$BUCKET_NAME/nutanix/ncs/logs/${AWS::StackName}/ --region $BUCKET_REGION; then
+                      echo "Log upload successful."
+                      # Clean up the temporary directory and tarball
+                      rm -rf "$LOG_LOCATION".tar.gz "$LOG_LOCATION"
+                    else
+                      echo "Log upload failed."
+                    fi
+                    # Get The ClusterCreationStarted WaitConditionHandle URL
+                    WaitConditionHandle="${ClusterCreationStartedHandler}"
+                    # Signal the WaitCondition with failure
+                    curl -X PUT \
+                    -H 'Content-Type:' --data-binary '{"Status" : "FAILURE","Reason" : "Deployment is Unsucessfull. Error logs are available at: S3://nutanix-ncs-metadata-${AWS::AccountId}/nutanix/ncs/logs/${AWS::StackName} ","UniqueId" : "ID1234","Data" : "-"}' \
+                    "$WaitConditionHandle"
+                    }
+                    enable_termination_protection() {
+                    aws cloudformation update-termination-protection --enable-termination-protection --stack-name ${AWS::StackName}
+                    }
+                    pull_manifest_helm_chart_and_untar() {
+                      if ! [[ "$NTNX_HELM_REPO_URL" =~ ^[0-9]{12}\.dkr\.ecr\.[a-z0-9-]+\.amazonaws\.com$ ]]; then
+                        REPO_NAME=$(echo "$NTNX_HELM_REPO_URL" | sed -E 's|https://([^.]+)\..*|\1|')
+                        helm repo add $REPO_NAME $NTNX_HELM_REPO_URL
+                        helm repo update
+                        helm pull $REPO_NAME/$1 --version $2 --untar
+                      else
+                        helm pull oci://$NTNX_HELM_REPO_URL/$1 --version $2 --untar
+                      fi
+                    }
+                    trap upload_log_to_s3 ERR
+                    # Create the S3 bucket if it does not exist
+                    create_s3_bucket_if_not_exists 
+                    TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+                    INSTANCE_ID=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/instance-id)
+                    VOLUME_ID=${NCSOrchestratorVolume.VolumeId}
+                    ATTACHED_INSTANCE=$(aws ec2 describe-volumes --volume-ids $VOLUME_ID --query "Volumes[0].Attachments[0].InstanceId" --output text)
+                    for i in {1..10}
+                    do
+                        ATTACHED_INSTANCE=$(aws ec2 describe-volumes --volume-ids $VOLUME_ID --query "Volumes[0].Attachments[0].InstanceId" --output text)
+                        if [ "$ATTACHED_INSTANCE" == "None" ]; then
+                            if ! aws ec2 attach-volume --volume-id $VOLUME_ID --instance-id $INSTANCE_ID --device /dev/sdf; then
+                                echo "Error attaching volume $VOLUME_ID to instance $INSTANCE_ID"
+                                echo "Attempt $i failed, retrying..."
+                                sleep 5
+                                continue
+                            else
+                                echo "Volume $VOLUME_ID successfully attached to instance $INSTANCE_ID"
+                                break
+                            fi
+                        elif [ "$ATTACHED_INSTANCE" != "$INSTANCE_ID" ]; then
+                            echo "Volume is already attached to another instance: $ATTACHED_INSTANCE. Attempt $i failed, retrying..."
+                            sleep 5
+                        else
+                            echo "Volume is already attached to this instance"
+                            break
+                        fi
+                        if [ $i -eq 10 ]; then
+                            echo "Failed to attach volume after 10 attempts, exiting..."
+                            exit 1
+                        fi
+                    done
+                    if [ "${EnableSSH}" == "Yes" ]; then
+                      EIP=${OrchestratorEIP.PublicIp}
+                      REGION=${AWS::Region}
+                      for i in {1..10}
+                      do
+                          ATTACHED_INSTANCE=$(aws ec2 describe-addresses --public-ips $EIP --region $REGION --query 'Addresses[0].InstanceId' --output text)
+                          if [ "$ATTACHED_INSTANCE" == "None" ]; then
+                              if ! aws ec2 associate-address --instance-id $INSTANCE_ID --public-ip $EIP --region $REGION; then
+                                  echo "Error attaching EIP $EIP to instance $INSTANCE_ID"
+                                  echo "Attempt $i failed, retrying..."
+                                  sleep 5
+                                  continue
+                              else
+                                  echo "EIP $EIP successfully attached to instance $INSTANCE_ID"
+                                  break
+                              fi
+                          elif [ "$ATTACHED_INSTANCE" != "$INSTANCE_ID" ]; then
+                              echo "EIP is already attached to another instance: $ATTACHED_INSTANCE. Attempt $i failed, retrying..."
+                              sleep 5
+                          else
+                              echo "EIP is already attached to this instance"
+                              break
+                          fi
+                          if [ $i -eq 10 ]; then
+                              echo "Failed to attach EIP after 10 attempts, exiting..."
+                              exit 1
+                          fi
+                      done
+                    fi
+                    set +e
+                    for i in {1..15}; do
+                      sleep 5
+                      DEVICE=$(readlink -f /dev/sdf)
+                      if [ -z "$DEVICE" ]; then
+                        [ $i -eq 15 ] && exit 1
+                        continue
+                      fi
+                      sudo file -s $DEVICE | grep -q "filesystem" || sudo mkfs -t ext4 $DEVICE
+                      if [ $? -eq 0 ]; then
+                        UUID=$(sudo blkid -s UUID -o value $DEVICE)
+                        [ -n "$UUID" ] && break
+                      fi
+                      [ $i -eq 15 ] && exit 1
+                    done
+                    set -e
+                    mkdir -p /opt/nutanix
+                    if [ -z `mount | grep " on /opt/nutanix "` ]; then
+                        echo "Mounting the EBS volume to /opt/nutanix"
+                        sudo mount $DEVICE /opt/nutanix
+                    else
+                        echo "EBS volume already mounted to /opt/nutanix"
+                    fi
+                    if [ -z `cat /etc/fstab | grep  "UUID=$UUID /opt/nutanix ext4 defaults,nofail 0 2"` ]; then
+                      echo "UUID=$UUID /opt/nutanix ext4 defaults,nofail 0 2" | sudo tee -a /etc/fstab
+                    else
+                        echo "Entry for /opt/nutanix already added to /etc/fstab"
+                    fi
+                    # Install Helm
+                    yum install git-2.40.1-1.amzn2023.0.3 -y
+                    curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+                    chmod 700 get_helm.sh
+                    ./get_helm.sh --version v3.16.1
+                    yum install -y docker-25.0.3-1.amzn2023.0.1
+                    # create nutanix group
+                    if [[ -z `getent group | grep nutanix` ]]; then
+                        groupadd nutanix
+                    fi
+                    usermod --append --groups nutanix ec2-user
+                    chown -R ec2-user:nutanix  /opt/nutanix/
+                    sudo -u ec2-user -i mkdir -p /opt/nutanix/ncs
+                    sudo -u ec2-user -i mkdir -p /home/ec2-user/.kube
+                    sudo -u ec2-user -i touch /home/ec2-user/.kube/config
+                    sudo echo "#User rules for ssm-user" > /etc/sudoers.d/ssm-agent-users
+                    sudo -u ec2-user -i  echo 'export KUBECONFIG=/home/ec2-user/.kube/config' >> /home/ec2-user/.bashrc
+                    sudo -u ec2-user -i  echo 'export NXCTLCONFIG=/home/ec2-user/.nxctlconfig' >> /home/ec2-user/.bashrc
+                    sudo -u ec2-user -i  echo 'export NTNX_ACC_REGION=us-west-2' >> /home/ec2-user/.bashrc
+                    CUST_ACC_ID=`aws sts get-caller-identity --query Account --output text`
+                    sudo -u ec2-user -i  echo "export CUST_ACC_ID=$CUST_ACC_ID" >> /home/ec2-user/.bashrc
+                    # switch to NTNX AWS account
+                    tokens=( `echo ${NutanixLicense}| base64 -d` )
+                    export AWS_ACCESS_KEY_ID=${!tokens[1]}
+                    export AWS_SECRET_ACCESS_KEY=${!tokens[2]}
+                    if [ ${!#tokens[@]} -gt 2 ]; then
+                      NTNX_ACC_ID=`aws sts get-caller-identity --query Account --output text`
+                      sudo -u ec2-user -i  echo "export NTNX_ACC_ID=$NTNX_ACC_ID" >> /home/ec2-user/.bashrc
+                    else
+                        echo "License key is invalid"
+                        return 1              
+                    fi
+                    source /home/ec2-user/.bashrc
+                    sudo -u ec2-user -i  source /home/ec2-user/.bashrc 
+                    if [ "$HELM_REGISTRY" == "ECR" ]; then
+                      if [ ! -z "$NTNX_ACC_ID" ]; then
+                        if [ $CUST_ACC_ID -ne  $NTNX_ACC_ID ]; then
+                          # Get exisitng policy and add statement for current customer account
+                          export POLICY_ID=ncs-ecr-policy-$CUST_ACC_ID
+                          export STMT=`echo "{\"Sid\" : \"$POLICY_ID\",\"Effect\" : \"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::$CUST_ACC_ID:root\"},\"Action\":[\"ecr:BatchCheckLayerAvailability\", \"ecr:BatchGetImage\", \"ecr:GetDownloadUrlForLayer\", \"ecr:ListImages\", \"ecr:GetAuthorizationToken\"]}"`
+                          # List of repositories to give access to
+                          declare -a repos=( ncs-aos ncs-app-aws ncs-cluster-operator ncs-cni ncs-installer-agent ncs-main-metadata-exporter ncs-main-nxctl-api-svc ncs-main-operator-container ncs-manifest
+                                            ncs-master-cni-container ncs-metadata-exporter ncs-ndk-csi ncs-ndk-infra-manager ncs-ndk-job-scheduler ncs-ndk-kube-rbac-proxy ncs-ndk-manager ncs-nxctl ncs-orchestrator
+                                            ncs-ndk ncs-nutanix-csi-storage ncs-collector ncs-collector-chart native-pc)
+                          for r in "${!repos[@]}"
+                          do
+                            export POLICY=`aws ecr get-repository-policy --registry-id $NTNX_ACC_ID --region $NTNX_ACC_REGION --repository-name $r --query policyText`
+                            export POLICY_ADDED=`echo $POLICY | grep $POLICY_ID`
+                            if [ -z "$POLICY_ADDED" ]; then
+                              if [ -z "$POLICY" ]; then
+                                echo "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Sid\":\"$POLICY_ID\",\"Effect\":\"Allow\",\"Principal\":{\"AWS\":\"arn:aws:iam::$CUST_ACC_ID:root\"},\"Action\":[\"ecr:BatchCheckLayerAvailability\",\"ecr:BatchGetImage\",\"ecr:GetDownloadUrlForLayer\",\"ecr:ListImages\",\"ecr:GetAuthorizationToken\"]}]}" > /opt/nutanix/ncs/ecrpolicy.json
+                              else
+                                echo $POLICY | sed  's/]\\n}/,'"$STMT"]}'/g' | sed 's/\\"/"/g' | sed 's/\"{\\n/{/' | sed 's/]}\"/]}/' | sed 's/\\n//g' > /opt/nutanix/ncs/ecrpolicy.json
+                              fi
+                              aws ecr set-repository-policy  --registry-id $NTNX_ACC_ID --region $NTNX_ACC_REGION --repository-name  $r  --policy-text file:///opt/nutanix/ncs/ecrpolicy.json
+                            else
+                              echo "Policy Statement for ECR access $POLICY_ID already added for ECR repo $r"
+                            fi
+                          done
+                          # TODO: Delete the ecrpolicy.json once initial QA phase is over - we can leave this in QA account for debugging, not in customer acccount.
+                        else
+                          echo "Running in Nutanix account, not adding ECR access"
+                        fi
+                        # switch back to original AWS account
+                      fi
+                      sudo -u ec2-user -i  echo "export NTNX_HELM_REPO_URL=$NTNX_ACC_ID.dkr.ecr.$NTNX_ACC_REGION.amazonaws.com" >> /home/ec2-user/.bashrc
+                      unset AWS_SECRET_ACCESS_KEY; unset AWS_ACCESS_KEY_ID
+                      aws ecr get-login-password --region $NTNX_ACC_REGION | helm registry login --username AWS --password-stdin $NTNX_ACC_ID.dkr.ecr.$NTNX_ACC_REGION.amazonaws.com
+                      aws ecr get-login-password --region $NTNX_ACC_REGION | docker login --username AWS --password-stdin $NTNX_ACC_ID.dkr.ecr.$NTNX_ACC_REGION.amazonaws.com
+                    else 
+                      if [[ "${ManifestVersionValue}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                        sudo -u ec2-user -i  echo "export NTNX_HELM_REPO_URL=https://nutanix.github.io/helm-releases" >> /home/ec2-user/.bashrc
+                      else
+                        sudo -u ec2-user -i  echo "export NTNX_HELM_REPO_URL=https://nutanix-scratch.github.io/helm" >> /home/ec2-user/.bashrc
+                      fi
+                      unset AWS_SECRET_ACCESS_KEY; unset AWS_ACCESS_KEY_ID
+                    fi
+                    sudo -u ec2-user -i  source /home/ec2-user/.bashrc
+                    source /home/ec2-user/.bashrc
+      
+                    if [ -f /opt/nutanix/ncs/latest/ncs-manifest/files/ncs-manifest.yaml ]; then
+                      echo "Using the ncs manifest from latest directory"
+                      export NCS_MANIFEST_DIR=/opt/nutanix/ncs/latest/ncs-manifest
+                    else
+                      if [ ! -d /opt/nutanix/ncs/ncs-manifest ]; then
+                        (cd /opt/nutanix/ncs && pull_manifest_helm_chart_and_untar ncs-manifest ${ManifestVersionValue})
+                        echo "Pulled ncs-manifest from $NTNX_HELM_REPO_URL"
+                      else
+                        echo "ncs-manifest already exists, skipping pull"
+                      fi
+                      export NCS_MANIFEST_DIR=/opt/nutanix/ncs/ncs-manifest
+                    fi
+                    if [ -z `rpm -qa | grep ncs-installer-agent` ]; then
+                      rpm -i $NCS_MANIFEST_DIR/charts/ncs-installer-agent/files/ncs-installer-agent*.rpm
+                    fi
+                    (cd /opt/nutanix/ncs && ncs-installer --manifest_file $NCS_MANIFEST_DIR/files/ncs-manifest.yaml --helm_repo_url $NTNX_HELM_REPO_URL)
+                    if [ ! -d /opt/nutanix/ncs/${ManifestVersionValue}/ncs-manifest ]; then
+                      mv /opt/nutanix/ncs/ncs-manifest /opt/nutanix/ncs/${ManifestVersionValue}/
+                      echo "Moved ncs-manifest to version directory"
+                    else
+                      echo "ncs-manifest already exists in version directory, skipping move"
+                    fi
+      
+                    PRIMARY_CLUSTER_REGION=$(echo ${AvailabilityZone} | sed 's/[a-z]$//')
+                    DR_CLUSTER_REGION=$(echo ${RemoteClusterAvailabilityZone} | sed 's/[a-z]$//')
+                    chmod 0755 /opt/nutanix/ncs/${ManifestVersionValue}/ncs-orchestrator/files/grant-access.sh
+                    sudo -u ec2-user -i sh /opt/nutanix/ncs/${ManifestVersionValue}/ncs-orchestrator/files/grant-access.sh \
+                            ${NutanixLicense} $NTNX_HELM_REPO_URL $PRIMARY_CLUSTER_REGION \
+                            $DR_CLUSTER_REGION ${ManifestVersionValue}
+                            
+                    chmod 0755 /opt/nutanix/ncs/${ManifestVersionValue}/ncs-orchestrator/files/ncs-banner.sh
+                    sh /opt/nutanix/ncs/${ManifestVersionValue}/ncs-orchestrator/files/ncs-banner.sh
+                    sh /opt/nutanix/ncs/${ManifestVersionValue}/ncs-orchestrator/files/deploy-ncs-cluster.sh ${ManifestVersionValue} $BUCKET_NAME $BUCKET_REGION
+                    enable_termination_protection
+                  - ManifestVersionString:
+                      Fn::If:
+                        - 'ManifestVersionIsLatest'
+                        - ''
+                        - !If
+                          - 'ManifestVersionProvided'
+                          - !Sub 
+                            - '--version ${ManifestVersion}'
+                            - ManifestVersion: !Ref ManifestVersion
+                          - !Ref AWS::NoValue
+                    ManifestVersionValue:
+                      Fn::If:
+                        - 'ManifestVersionIsLatest'
+                        - 'latest'
+                        - !If
+                          - 'ManifestVersionProvided'
+                          - !Sub 
+                            - '${ManifestVersion}'
+                            - ManifestVersion: !Ref ManifestVersion
+                          - !Ref AWS::NoValue
+                    EnableSSH: !If
+                      - EnableSSHToOrchestrator
+                      - "Yes"
+                      - "No"
+              mode: '000755'
+          commands:
+            01_run_setup:
+              command: bash /opt/nutanix/ncs/setup.sh
+    Properties:
+      LaunchTemplateName: !Ref AWS::StackName
+      LaunchTemplateData:
+        DisableApiTermination: true
+        DisableApiStop: true
+        IamInstanceProfile:
+          Name: !Ref NCSOrchestratorInstanceProfile
+        ImageId: !FindInMap [AMIRegionMapping, !Ref "AWS::Region", AMI]
+        InstanceType: t2.xlarge
+        KeyName: !Ref KeyPair
+        SecurityGroupIds:
+          - !Ref NCSOrchestratorSG
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: primary_owner
+                Value: !Ref PrimaryOwner        
+              - Key: ncs-component-type
+                Value: ncs-jumphost
+        UserData: !Base64
+          Fn::Sub: |
+            Content-Type: multipart/mixed; boundary="//"
+            MIME-Version: 1.0
+            --//
+            Content-Type: text/cloud-config; charset="us-ascii"
+            MIME-Version: 1.0
+            Content-Transfer-Encoding: 7bit
+            Content-Disposition: attachment; filename="cloud-config.txt"
+            #cloud-config
+            cloud_final_modules:
+            - [scripts-user, always]
+            --//
+            Content-Type: text/x-shellscript; charset="us-ascii"
+            MIME-Version: 1.0
+            Content-Transfer-Encoding: 7bit
+            Content-Disposition: attachment; filename="userdata.txt"
+            #!/bin/bash
+            dnf install -y aws-cfn-bootstrap 2>/dev/null || yum install -y aws-cfn-bootstrap 2>/dev/null || true
+            /opt/aws/bin/cfn-init -v \
+              --stack ${AWS::StackName} \
+              --resource NCSOrchestratorTemplate \
+              --region ${AWS::Region}
+            --//
+
+  NCSOrchestratorASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Condition: CreateOrchestratorVM
+    DependsOn: 
+      - NCSOrchestratorVolume
+      - OrchestratorEIP
+    Properties:
+      AvailabilityZones:
+        - !Ref OrchestratorAvailabilityZone
+      LaunchTemplate:
+        LaunchTemplateId: !Ref NCSOrchestratorTemplate
+        Version: !GetAtt NCSOrchestratorTemplate.LatestVersionNumber
+      MinSize: '1'
+      MaxSize: '1'
+      DesiredCapacity: '1'
+      VPCZoneIdentifier:
+        !If
+          - EnableSSHToOrchestrator
+          - [!Ref PublicSubnet]  # Use Public Subnet if SSH is enabled
+          - [!Ref PrivateSubnet]
+      Tags:
+        - Key: primary_owner
+          PropagateAtLaunch: false
+          Value: !Ref PrimaryOwner
+        - Key: Name
+          PropagateAtLaunch: true
+          Value: !Sub "${AWS::StackName}-Orchestrator"
+        - Key: ncs-component-type
+          PropagateAtLaunch: true
+          Value: ncs-jumphost
+
+
+  NCSOrchestratorSG:
+    Type: AWS::EC2::SecurityGroup
+    Condition: CreateOrchestratorVM
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Description
+      SecurityGroupIngress:
+        - Condition: EnableSSHToOrchestrator
+          CidrIp: !Ref IPToAccessJumphost
+          FromPort: 22
+          ToPort: 22
+          IpProtocol: tcp
+      Tags:
+        - Key: primary_owner
+          Value: !Ref PrimaryOwner
+        - Key: ncs-component-type
+          Value: ncs-jumphost
+
+  ClusterCreationStartedHandler:
+    Type: AWS::CloudFormation::WaitConditionHandle
+  ClusterCreationStarted:
+    Type: AWS::CloudFormation::WaitCondition
+    DependsOn: 
+      - NCSOrchestratorASG
+      - OrchestratorEIP
+      - NCSOrchestratorVolume
+    Properties:
+      Count: 1
+      Handle: !Ref ClusterCreationStartedHandler
+      Timeout: 40000
+
+  NativePCHandler:
+    Type: AWS::CloudFormation::WaitConditionHandle
+  NCSControlPlane:
+    Type: AWS::CloudFormation::WaitCondition
+    DependsOn: ClusterCreationStarted
+    Properties:
+      Count: 1
+      Handle: !Ref NativePCHandler
+      Timeout: 40000
+
+  EKSClusterHandler:
+    Type: AWS::CloudFormation::WaitConditionHandle
+  EKSCluster:
+    Type: AWS::CloudFormation::WaitCondition
+    DependsOn: NCSControlPlane
+    Properties:
+      Count: 1
+      Handle: !Ref EKSClusterHandler
+      Timeout: 40000
+
+  NodegroupHandler:
+    Type: AWS::CloudFormation::WaitConditionHandle
+  Nodegroup:
+    Type: AWS::CloudFormation::WaitCondition
+    DependsOn: EKSCluster
+    Properties:
+      Count: 1
+      Handle: !Ref NodegroupHandler
+      Timeout: 40000
+
+  NCSComponentsHandler:
+    Type: AWS::CloudFormation::WaitConditionHandle
+  NCSComponents:
+    Type: AWS::CloudFormation::WaitCondition
+    DependsOn: Nodegroup
+    Properties:
+      Count: 1
+      Handle: !Ref NCSComponentsHandler
+      Timeout: 40000
+
+  NutanixCSISetupHandler:
+    Type: AWS::CloudFormation::WaitConditionHandle
+  NutanixCSISetup:
+    Type: AWS::CloudFormation::WaitCondition
+    DependsOn: NCSCluster
+    Properties:
+      Count: 1
+      Handle: !Ref NutanixCSISetupHandler
+      Timeout: 40000
+
+  NDKSetupHandler:
+    Type: AWS::CloudFormation::WaitConditionHandle
+  NDKSetup:
+    Type: AWS::CloudFormation::WaitCondition
+    DependsOn: NutanixCSISetup
+    Properties:
+      Count: 1
+      Handle: !Ref NDKSetupHandler
+      Timeout: 40000
+
+  NCSClusterHandler:
+    Type: AWS::CloudFormation::WaitConditionHandle
+  NCSCluster:
+    Type: AWS::CloudFormation::WaitCondition
+    DependsOn: NCSComponents
+    Properties:
+      Count: 1
+      Handle: !Ref NCSClusterHandler
+      Timeout: 40000
+
+  MetadataBackupHandler:
+    Type: AWS::CloudFormation::WaitConditionHandle
+  MetadataBackup:
+    Type: AWS::CloudFormation::WaitCondition
+    DependsOn: NDKSetup
+    Properties:
+      Count: 1
+      Handle: !Ref MetadataBackupHandler
+      Timeout: 40000
+
+  RemoteClusterCreationStartedHandler:
+    Type: AWS::CloudFormation::WaitConditionHandle
+  RemoteClusterCreationStarted:
+    Type: AWS::CloudFormation::WaitCondition
+    Condition: CreateRemoteSetupCondition
+    DependsOn: MetadataBackup
+    Properties:
+      Count: 1
+      Handle: !Ref RemoteClusterCreationStartedHandler
+      Timeout: 40000
+
+  RemoteNativePCHandler:
+    Type: AWS::CloudFormation::WaitConditionHandle
+    Condition: CreateRemoteSetupCondition
+  RemoteClusterNCSControlPlane:
+    Type: AWS::CloudFormation::WaitCondition
+    Condition: CreateRemoteSetupCondition
+    DependsOn: RemoteClusterCreationStarted
+    Properties:
+      Count: 1
+      Handle: !Ref RemoteNativePCHandler
+      Timeout: 40000
+
+  RemoteEKSClusterHandler:
+    Type: AWS::CloudFormation::WaitConditionHandle
+    Condition: CreateRemoteSetupCondition
+  RemoteEKSCluster:
+    Type: AWS::CloudFormation::WaitCondition
+    Condition: CreateRemoteSetupCondition
+    DependsOn: RemoteClusterNCSControlPlane
+    Properties:
+      Count: 1
+      Handle: !Ref RemoteEKSClusterHandler
+      Timeout: 40000
+
+  RemoteNodegroupHandler:
+    Type: AWS::CloudFormation::WaitConditionHandle
+    Condition: CreateRemoteSetupCondition
+  RemoteNodegroup:
+    Type: AWS::CloudFormation::WaitCondition
+    Condition: CreateRemoteSetupCondition
+    DependsOn: RemoteEKSCluster
+    Properties:
+      Count: 1
+      Handle: !Ref RemoteNodegroupHandler
+      Timeout: 40000
+
+  RemoteNCSComponentsHandler:
+    Type: AWS::CloudFormation::WaitConditionHandle
+    Condition: CreateRemoteSetupCondition
+  RemoteNCSComponents:
+    Type: AWS::CloudFormation::WaitCondition
+    Condition: CreateRemoteSetupCondition
+    DependsOn: RemoteNodegroup
+    Properties:
+      Count: 1
+      Handle: !Ref RemoteNCSComponentsHandler
+      Timeout: 40000
+
+  RemoteNutanixCSISetupHandler:
+    Type: AWS::CloudFormation::WaitConditionHandle
+    Condition: CreateRemoteSetupCondition
+  RemoteNutanixCSISetup:
+    Type: AWS::CloudFormation::WaitCondition
+    Condition: CreateRemoteSetupCondition
+    DependsOn: RemoteNCSCluster
+    Properties:
+      Count: 1
+      Handle: !Ref RemoteNutanixCSISetupHandler
+      Timeout: 40000
+
+  RemoteNDKSetupHandler:
+    Type: AWS::CloudFormation::WaitConditionHandle
+    Condition: CreateRemoteSetupCondition
+  RemoteNDKSetup:
+    Type: AWS::CloudFormation::WaitCondition
+    Condition: CreateRemoteSetupCondition
+    DependsOn: RemoteNutanixCSISetup
+    Properties:
+      Count: 1
+      Handle: !Ref RemoteNDKSetupHandler
+      Timeout: 40000
+
+  RemoteNCSClusterHandler:
+    Type: AWS::CloudFormation::WaitConditionHandle
+    Condition: CreateRemoteSetupCondition
+  RemoteNCSCluster:
+    Type: AWS::CloudFormation::WaitCondition
+    Condition: CreateRemoteSetupCondition
+    DependsOn: RemoteNCSComponents
+    Properties:
+      Count: 1
+      Handle: !Ref RemoteNCSClusterHandler
+      Timeout: 40000
+  
+  RemoteMetadataBackupHandler:
+    Type: AWS::CloudFormation::WaitConditionHandle
+    Condition: CreateRemoteSetupCondition
+  RemoteMetadataBackup:
+    Type: AWS::CloudFormation::WaitCondition
+    Condition: CreateRemoteSetupCondition
+    DependsOn: RemoteNDKSetup
+    Properties:
+      Count: 1
+      Handle: !Ref RemoteMetadataBackupHandler
+      Timeout: 40000
+
+  VPCPeeringHandler:
+    Type: AWS::CloudFormation::WaitConditionHandle
+    Condition: CreateRemoteSetupCondition
+  VPCPeering:
+    Type: AWS::CloudFormation::WaitCondition
+    Condition: CreateRemoteSetupCondition
+    DependsOn:
+      - RemoteMetadataBackup
+      - MetadataBackup
+    Properties:
+      Count: 1
+      Handle: !Ref VPCPeeringHandler
+      Timeout: 40000
+
+Outputs:
+  JumpHostIP:
+    Description: Public IP of the Jump Host
+    Value: !GetAtt [OrchestratorEIP, PublicIp]
+    Condition: EnableSSHToOrchestrator
+
+  LogLocation:
+    Description: Location of the logs
+    Value: !Sub 'S3://nutanix-ncs-metadata-${AWS::AccountId}/nutanix/ncs/logs/${AWS::StackName}/'

@@ -1,41 +1,41 @@
 #!/bin/bash
 
-export CLUSTER_NAME="zy-nkp-wkld"
+export CLUSTER_NAME="ksl-demo-cluster"
 
-export NUTANIX_ENDPOINT="https://10.129.42.11:9440/"
+export NUTANIX_ENDPOINT="https://10.38.211.7:9440/"
 
-export NUTANIX_USER=zhouyi@ntnxlab.local
-export NUTANIX_PASSWORD=P@ssw0rd
+export NUTANIX_USER=nkp_svc@ntnxlab.local
+export NUTANIX_PASSWORD=ntnx/4NKP
 
 export AIRGAPPED=true
 export INSECURE=true
 
-export NUTANIX_CLUSTER="NKP"
+export NUTANIX_CLUSTER="PHX-POC213"
 export STORAGE_CONTAINER_NAME="SelfServiceContainer"
 
-export CONTROLPLANE_IP="10.129.42.210"
-export SERVICE_LB_IP_RANGE="10.129.42.211-10.129.42.215"
+export CONTROLPLANE_IP="10.38.213.210"
+export SERVICE_LB_IP_RANGE="10.38.213.211-10.38.213.214"
 
-export SUBNET="Machine_Network_42"
+export SUBNET="PHX-POC213-secondary"
 
-export VM_IMAGE="nkp-ubuntu-22.04-release-cis-1.33.5-20251108010758.qcow2"
+export VM_IMAGE="nkp-ubuntu-24.04-release-cis-1.34.1-20251206061851.qcow2"
 
 export KUBERNETES_PODS_NETWORK="192.168.0.0/16"
 export KUBERNETES_SERVICES_NETWORK="10.96.0.0/12"
 
 export SSH_PUBLIC_KEY_FILE="/home/nutanix/.ssh/id_rsa.pub"
 
-export CATEGORIES="Owner=zy"
+#export CATEGORIES="Owner=zy"
 
-export REGISTRY_FQDN="zy-registry.ntnxlab.local"
-export REGISTRY_URL="https://zy-registry.ntnxlab.local"
+export REGISTRY_FQDN="registry.ntnxlab.local"
+export REGISTRY_URL="https://registry.ntnxlab.local"
 export REGISTRY_USERNAME="admin"
 export REGISTRY_PASSWORD="Harbor12345"
-export REGISTRY_MIRROR_URL="https://zy-registry.ntnxlab.local/library"
+export REGISTRY_MIRROR_URL="https://registry.ntnxlab.local/library"
 export REGISTRY_CA="/home/nutanix/certs/registry_ca.crt"
 
 export KUBECONFIG="/home/nutanix/airgap-nkp-1.conf"
-export WORKSPACE_NAMESPACE="ckad"
+export WORKSPACE_NAMESPACE="kommander-default-namespace"
 export WKLD_DIR="/home/nutanix/wkld"
 
 nkp create cluster nutanix \

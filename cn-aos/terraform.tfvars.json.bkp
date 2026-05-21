@@ -1,0 +1,80 @@
+{
+    "src_vpc_id" : "",
+    "src_vpc_cidr":"",
+    "src_availability_zone":"us-west-2a",
+    "src_public_subnet_id":"",
+    "src_public_subnet_cidr":"",
+    "src_worker_node_subnet_id":"",
+    "src_worker_node_subnet_cidr":"",
+    "src_management_subnet_id":"",
+    "src_management_subnet_cidr":"",
+    "src_load_balancer_subnet_id":"",
+    "src_load_balancer_subnet_cidr":"",
+    "src_aos_subnet_cidr":"",
+ 
+    "src_deploy_ncs_control_plane":"true",
+    "src_ncs_control_plane_ip":"",
+    "src_ncs_control_plane_username":"admin",
+    "src_ncs_control_plane_password":"ntnx/4NKP",
+    "src_ncs_control_plane_ntnx_password":"ntnx/4NKP",
+    "src_ncs_control_plane_instance_type":"m5.4xlarge",
+ 
+    "src_eks_cluster_name":"zy-cn-aos-eks",
+    "src_eks_cluster_version":"1.30",
+    "src_eks_node_instance_type":"m5d.8xlarge",
+    "src_eks_public_ip_allowlist":["0.0.0.0/0"],
+    "src_eks_private_ip_allowlist":[],
+ 
+     
+ 
+    "src_ncs_cluster_name":"zy-cn-aos-cluster",
+    "src_ncs_cluster_size":"3",
+    "src_replication_factor":"2",
+    "src_ncs_cluster_type":"HCI",
+     
+ 
+   
+    "dest_vpc_id":"",
+    "dest_vpc_cidr":"",
+    "dest_availability_zone":"",
+    "dest_public_subnet_id":"",
+    "dest_public_subnet_cidr":"",
+    "dest_worker_node_subnet_id":"",
+    "dest_worker_node_subnet_cidr":"",
+    "dest_management_subnet_id":"",
+    "dest_management_subnet_cidr":"",
+    "dest_load_balancer_subnet_id":"",
+    "dest_load_balancer_subnet_cidr":"",
+    "dest_aos_subnet_cidr":"",
+ 
+ 
+    "dest_deploy_ncs_control_plane": "false",
+    "dest_ncs_control_plane_instance_type":"",
+    "dest_ncs_control_plane_ip":"",
+    "dest_ncs_control_plane_username":"",
+    "dest_ncs_control_plane_password":"",
+    "dest_ncs_control_plane_ntnx_password":"",
+ 
+ 
+    "dest_eks_cluster_name":"",
+    "dest_eks_cluster_version":"",
+    "dest_eks_node_instance_type":"",
+    "dest_eks_public_ip_allowlist":[],
+    "dest_eks_private_ip_allowlist":[],
+ 
+ 
+    "dest_ncs_cluster_name":"",
+    "dest_ncs_cluster_size": 0,
+    "dest_replication_factor": 2,
+    "dest_ncs_cluster_type":"HCI",
+     
+    "docker_registry_username":"ntnxsvcregistrycnaos",
+    "docker_registry_password":"",
+    
+    "additional_iam_access_arn":"",
+    "deploy_ndk_setup":"true",
+    "key_name": "",
+    "user_ip_cidr":"",
+    "primary_owner":"ZY"
+ 
+}
