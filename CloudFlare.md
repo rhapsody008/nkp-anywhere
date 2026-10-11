@@ -22,15 +22,23 @@ Install cloudflared CLI:
 sudo mkdir -p --mode=0755 /usr/share/keyrings
 curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
 
-# Add this repo to your apt repositories
-# Stable
-echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared noble main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
-# Nightly
-echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://next.pkg.cloudflare.com/cloudflared noble main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
+# Stable repo only
+echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared noble main' \
+  | sudo tee /etc/apt/sources.list.d/cloudflared.list
 
-# install cloudflared
+# Build a clean keyring with both keys
+rm -rf /tmp/cf-gpg && mkdir -p /tmp/cf-gpg && chmod 700 /tmp/cf-gpg
+curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | gpg --homedir /tmp/cf-gpg --import
+gpg --homedir /tmp/cf-gpg --keyserver keyserver.ubuntu.com --recv-keys 254B391D8CACCBF8
+gpg --homedir /tmp/cf-gpg --export 254B391D8CACCBF8 8A682D308D4E5E73 \
+  | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
+sudo chmod 644 /usr/share/keyrings/cloudflare-main.gpg
+
+# Should list two keys
+gpg --show-keys /usr/share/keyrings/cloudflare-main.gpg
+
 sudo apt-get update && sudo apt-get install cloudflared
-
+rm -rf /tmp/cf-gpg
 ```
 
 
